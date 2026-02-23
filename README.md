@@ -48,10 +48,16 @@ Download the latest version from the **[Releases](https://github.com/leosimon/iP
 
 1. **Download** the zip file and unzip it
 2. **Move** `Enable Sidecar.app` to your Applications folder (or anywhere you like)
-3. **Run it once** — macOS will ask for Accessibility permission:
-   - Go to **System Settings → Privacy & Security → Accessibility**
-   - Enable **Automator** (or the app itself)
+3. **First launch** — macOS will show a security prompt:
+   - Click **"Open Anyway"** in **System Settings → Privacy & Security**
+   - Then grant **Accessibility permission** when prompted:
+     go to **System Settings → Privacy & Security → Accessibility** and enable the app
 4. **Run again** — your iPad should connect as a second display within a few seconds
+
+> **Why does macOS block it the first time?**
+> The app is signed with an Ad-hoc signature (no paid Apple Developer account required).
+> macOS flags any app from an unregistered developer on first launch as a precaution.
+> This is a one-time step — after you approve it once, it runs without any prompts.
 
 ### Sound Feedback
 - 🔊 **Pop** — script started
