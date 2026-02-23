@@ -46,23 +46,64 @@ Download the latest version from the **[Releases](https://github.com/leosimon/iP
 
 ## 🚀 How to Use
 
-1. **Download** the zip file and unzip it
-2. **Move** `Enable Sidecar.app` to your Applications folder (or anywhere you like)
-3. **First launch** — macOS will show a security prompt:
-   - Click **"Open Anyway"** in **System Settings → Privacy & Security**
-   - Then grant **Accessibility permission** when prompted:
-     go to **System Settings → Privacy & Security → Accessibility** and enable the app
-4. **Run again** — your iPad should connect as a second display within a few seconds
+### Step 1 — Re-export the app from Automator (required, one-time only)
 
-> **Why does macOS block it the first time?**
-> The app is signed with an Ad-hoc signature (no paid Apple Developer account required).
-> macOS flags any app from an unregistered developer on first launch as a precaution.
-> This is a one-time step — after you approve it once, it runs without any prompts.
+Because this app is distributed as an Automator workflow, macOS requires you to export it locally on your own Mac before running it. This ensures the app is signed with your machine's identity and avoids the "damaged" error.
+
+1. **Download** the zip file and unzip it
+2. **Right-click** `Enable Sidecar.app` → **Open With → Automator**
+3. In Automator, go to **File → Export**
+4. Set the format to **Application**, choose a save location (e.g. Applications folder)
+5. At the bottom, set **Code Sign** to **Ad-hoc Code Sign**
+6. Click **Save**
+
+> **Why is this step needed?**
+> The `.app` file in the zip was built on a different Mac. macOS checks the code signature
+> against the machine it was built on. Re-exporting with Ad-hoc Code Sign creates a fresh
+> local signature that your Mac trusts — no paid Apple Developer account required.
+
+---
+
+### Step 2 — Grant Accessibility permission (first run only)
+
+1. **Run** the exported app
+2. macOS will prompt for **Accessibility permission** — click **"Open System Settings"**
+3. In **System Settings → Privacy & Security → Accessibility**, enable the app
+4. **Important:** do not dismiss this dialog without granting permission — if you accidentally deny it, see the troubleshooting section below
+
+> After granting permission once, the app runs silently every time with no prompts.
+
+---
+
+### Step 3 — Run
+
+Double-click the app — your iPad will connect as a second display within a few seconds.
 
 ### Sound Feedback
 - 🔊 **Pop** — script started
 - 🔊 **Blow** — iPad connected successfully
 - 🔊 **Hero** — connection failed (iPad not found or not available)
+
+---
+
+### Troubleshooting: app keeps failing after denying Accessibility permission
+
+If you accidentally dismissed the Accessibility prompt without granting permission, macOS caches the denial and **will not prompt again** — even if you delete and re-export the app. Fix it with one of these methods:
+
+**Option A — Add manually in System Settings (easiest)**
+1. Go to **System Settings → Privacy & Security → Accessibility**
+2. Click **`+`** and manually add the exported app
+3. Make sure the toggle is **on**
+
+**Option B — Reset via Terminal**
+```bash
+# First find your app's Bundle ID
+mdls -name kMDItemCFBundleIdentifier /Applications/Enable\ Sidecar.app
+
+# Then reset only that app's permission
+tccutil reset Accessibility com.apple.automator.Enable-Sidecar
+```
+After running this, launch the app again — the permission dialog will reappear.
 
 ---
 
