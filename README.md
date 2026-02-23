@@ -99,3 +99,85 @@ iPadAsMacMonitor/
 ## 🙏 Contributing
 
 Feel free to open an issue if the script stops working after a macOS update — the accessibility tree structure can change between versions.
+
+---
+
+## 🔍 How It Works
+
+The app is an **Automator application** containing a single "Run AppleScript" action. Here is what happens step by step when you launch it.
+
+### Execution Flow
+
+```
+Launch app
+    │
+    ▼
+① Play "Pop" sound                    ← signals script has started
+    │
+    ▼
+② Open Display settings               ← via URL scheme:
+   x-apple.systempreferences:            no menu bar navigation needed
+   com.apple.preference.displays
+    │
+    ▼
+③ Wait for System Settings window     ← polls every 0.1s, up to 5s timeout
+    │
+    ▼
+④ Wait 1 second                       ← lets the Display panel fully render
+    │
+    ▼
+⑤ Recursively scan accessibility tree ← searches UI elements up to 4 levels deep
+   to find the dropdown button           works with menu button / button / pop up button
+    │
+    ├─ Not found ──────────────────────► Play "Hero" sound (failure) → exit
+    │
+    ▼
+⑥ Click the dropdown button           ← opens the "Add Display" menu
+    │
+    ▼
+⑦ Wait for menu items to load         ← polls every 0.1s, up to 2s timeout
+    │
+    ▼
+⑧ Read all menu item names            ← tries title → name → AXTitle for each item
+    │
+    ▼
+⑨ Find last item containing "iPad"    ← searches from the bottom up:
+                                         if Universal Control is also active,
+                                         the same iPad appears twice —
+                                         Sidecar is always the last entry
+    │
+    ├─ Not found ──────────────────────► Play "Hero" sound (failure) → exit
+    │
+    ▼
+⑩ Click the matching menu item        ← initiates Sidecar connection
+    │
+    ▼
+⑪ Play "Blow" sound                   ← connection initiated successfully
+    │
+    ▼
+⑫ Wait 0.3s → Quit System Settings   ← restore volume to original level
+```
+
+### Helper Functions
+
+| Function | Purpose |
+|---|---|
+| `playSound(soundPath)` | Plays a system sound via `afplay` shell command |
+| `waitForApplicationWindow(appName, maxWait)` | Polls until the named app's window appears, with timeout |
+| `openDisplaysSettings()` | Opens Display settings via URL scheme, returns success/failure |
+| `findMenuButtonOrDropdownButton(element, depth)` | Recursively searches the accessibility tree for any kind of dropdown button |
+| `waitForMenu(menuButton, maxWait)` | Polls until the menu has loaded at least one item |
+| `findLastTargetIndexContains(text, list)` | Searches a list from the end, returns index of last item containing the target text |
+| `getMenuItemText(menuItem)` | Reads a menu item's display text, trying `title` → `name` → `AXTitle` in order |
+| `findAndClickTargetDevice(menuButton)` | Combines the above to locate and click the correct iPad menu entry |
+| `getFirstWindow()` | Returns the first window of System Settings |
+
+### Why v2.0 is More Robust Than v1.0
+
+| Aspect | v1.0 approach | v2.0 approach |
+|---|---|---|
+| Opening settings | Navigate menu bar: View → Displays | Direct URL scheme — immune to menu bar changes |
+| Finding the button | Hardcoded UI path (`group 1 of group 2 of splitter group 1 …`) | Recursive accessibility tree scan — works regardless of layout |
+| Device matching | Exact string match (must type iPad name perfectly) | Fuzzy `contains` match — any name with "iPad" works |
+| Duplicate handling | Not handled | Searches from the end — Sidecar always wins over Universal Control |
+| Error handling | Single `try/on error` block | Each stage has its own timeout and fallback |
